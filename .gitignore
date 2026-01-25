@@ -1,0 +1,88 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.Python
+env/
+env.bak/
+venv/
+venv.bak/
+pip-wheel-metadata/
+.eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing
+.pytest_cache/
+.cache/
+.tox/
+coverage
+coverage.*
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest/
+
+# Build
+build/
+dist/
+sdist/
+*.egg-info/
+MANIFEST
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.history/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Logs
+logs/
+*.log
+
+# PIDs
+pids/
+
+# Locks
+locks/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# 配置文件
+config.yaml
+
+# Go
+# Go编译产物
+context_crawl/context_crawl
+context_crawl/*.exe
+context_crawl/*.dll
+context_crawl/*.so
+context_crawl/*.dylib
+# Go模块文件（允许上传）
+!context_crawl/go.mod
+!context_crawl/go.sum
+
+# Database
+*.db
+*.sqlite3
+
+# Hub models
+models/hub/

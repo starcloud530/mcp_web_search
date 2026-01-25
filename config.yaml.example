@@ -1,0 +1,30 @@
+project:
+  name: "mcp_web_search"
+  description: "MCP Web Search Server - 整合链接搜索和网页爬取服务"
+  version: "1.0.0"
+
+# MCP 服务配置
+mcp:
+  host: 0.0.0.0
+  port: 8006
+
+# 链接搜索服务配置
+links_search:
+  host: 0.0.0.0
+  port: 8004
+  sources:
+    bocha:
+      enabled: true
+      url: "https://api.bochaai.com/v1/web-search"
+      api_key: "your-bocha-api-key-here"
+    mita:
+      enabled: true
+      url: "https://metaso.cn/api/v1/search"
+      api_key: "your-mita-api-key-here"
+    duckgo:
+      enabled: false
+
+# 网页爬取服务配置
+context_crawl:
+  host: 0.0.0.0
+  port: 8003

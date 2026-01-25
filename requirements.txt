@@ -1,0 +1,28 @@
+# MCP Web Search Server 依赖包
+
+# MCP 相关
+mcp
+
+# Web 框架和服务器
+fastapi
+uvicorn
+
+# HTTP 客户端
+aiohttp
+httpx
+
+# 配置处理
+pyyaml
+
+# 数据验证
+pydantic
+
+# 搜索引擎
+duckduckgo-search
+
+# NLP 处理 (用于 BM25)
+tiktoken
+
+# 其他工具
+asyncio
+dataclasses
