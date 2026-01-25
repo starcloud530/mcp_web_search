@@ -8,9 +8,79 @@ MCP网页搜索服务器，支持多源搜索引擎。
 - 🌐 **网页爬取**: 自动爬取网页内容并进行文本切块处理
 - 🤖 **MCP 集成**: 提供标准 MCP 工具接口，可与各种 AI 助手集成
 - ⚡ **高性能**: 支持并发处理和批量操作
+- 🔧 **Pipeline 架构**: 可复用的处理管道，支持灵活扩展
+- 🎯 **智能选择**: 根据 URL 自动选择合适的处理 pipeline
 
-缺陷：
-- 暂不支持网页图片、文件的抓取
+## Pipeline 架构
+
+### 核心设计
+
+项目采用 **Pipeline 模式** 处理不同类型的网页内容，通过统一的接口规范实现高度复用和灵活扩展：
+
+```go
+// Pipeline 接口定义
+type Pipeline interface {
+    Process(Type) (Type, error)  // 处理方法
+    Match(url string) bool       // URL 匹配方法
+}
+```
+
+### 架构优势
+
+1. **组件化设计**：每个 pipeline 都是独立的处理单元
+2. **可复用性**：爬虫、清洗、分块组件可灵活组合
+3. **易于扩展**：新增 pipeline 只需实现统一接口
+4. **智能选择**：根据 URL 自动匹配合适的处理 pipeline
+
+### 内置 Pipeline
+
+| Pipeline | 优先级 | 适用场景 |
+|----------|--------|----------|
+| PDF Pipeline | 25 | PDF 文档处理 |
+| Markdown Pipeline | 20 | Markdown 文件 |
+| GitHub Pipeline | 15 | GitHub 仓库和文件 |
+| Colly Pipeline | 10 | 通用网页爬取（默认） |
+
+### Pipeline 复用机制
+
+```go
+// 示例：组合不同组件创建自定义 pipeline
+type CustomPipeline struct {
+    Crawler types.Crawler  // 爬虫组件
+    Cleaner types.Cleaner  // 清洗组件
+    Chunker types.Chunker  // 分块组件
+}
+
+func NewCustomPipeline() *CustomPipeline {
+    return &CustomPipeline{
+        Crawer: NewCustomCrawler(),
+        Cleaner: NewAdvancedCleaner(),
+        Chunker: NewScoredChunker(0.8),
+    }
+}
+```
+
+### 扩展新的 Pipeline
+
+```go
+// 1. 实现 Pipeline 接口
+type MyPipeline struct{}
+
+func (p *MyPipeline) Process(input types.Type) (types.Type, error) {
+    // 实现处理逻辑
+    return result, nil
+}
+
+func (p *MyPipeline) Match(url string) bool {
+    // 实现 URL 匹配逻辑
+    return strings.HasSuffix(url, ".myext")
+}
+
+// 2. 注册到系统
+func init() {
+    core.RegisterPipeline(30, "myext", NewMyPipeline())
+}
+```
 
 ## 项目结构
 
@@ -19,14 +89,43 @@ mcp-web-search-server/
 ├── server.py              # MCP 服务器主文件 (端口: 8006)
 ├── client_test.py         # 客户端测试文件
 ├── config.yaml           # 统一配置文件
+├── config.yaml.example   # 配置文件模板
 ├── requirements.txt      # Python 依赖列表
 ├── start.sh              # 一键启动所有服务
 ├── stop.sh               # 一键停止所有服务
 ├── context_crawl/         # 网页爬取服务 (Go)
 │   ├── main.go           # 爬取服务入口
-│   ├── utils/            # Go 工具模块
-│   │   └── config.go     # Go 配置工具
-│   └── ...              # 其他 Go 模块文件
+│   ├── app/              # HTTP 路由处理
+│   │   ├── route.go      # 路由注册
+│   │   └── v1/
+│   │       └── api.go    # API 端点定义
+│   ├── core/             # Pipeline 核心管理
+│   │   ├── register.go   # Pipeline 注册机制
+│   │   └── choice.go     # Pipeline 选择器
+│   ├── base/             # 基础 Pipeline 实现
+│   │   └── colly/        # 通用 Colly Pipeline
+│   │       ├── crawl.go  # 爬虫组件
+│   │       ├── clean.go  # 清洗组件
+│   │       ├── chunk.go  # 分块组件
+│   │       └── pipeline.go
+│   ├── custom/           # 专用 Pipeline 实现
+│   │   ├── github/       # GitHub 专用 Pipeline
+│   │   ├── md/           # Markdown 专用 Pipeline
+│   │   └── pdf/          # PDF 专用 Pipeline
+│   ├── types/            # 类型定义和接口
+│   │   ├── pipeline.go   # Pipeline 接口定义
+│   │   ├── crawler.go    # 爬虫接口
+│   │   ├── cleaner.go    # 清洗接口
+│   │   └── chunker.go    # 分块接口
+│   ├── handler/          # 请求处理
+│   │   ├── url_handler.go
+│   │   └── models/
+│   │       ├── request.go
+│   │       └── response.go
+│   ├── service/          # 业务逻辑
+│   │   └── url_service.go
+│   └── utils/            # 工具函数
+│       └── config.go
 └── links_search/         # 链接搜索服务 (Python)
     ├── main.py          # 搜索服务入口  
     ├── utils/           # Python 工具模块
@@ -165,7 +264,21 @@ await session.call_tool("get_page_content", {
 
 ## 配置说明
 
-### 统一配置文件 (config.yaml)
+### 配置文件设置
+
+**安全提醒：** `config.yaml` 文件包含敏感信息（如 API keys），请勿提交到版本控制系统！
+
+1. **从模板创建配置文件：**
+   ```bash
+   cp config.yaml.example config.yaml
+   ```
+
+2. **编辑配置文件：**
+   ```bash
+   vim config.yaml
+   ```
+
+3. **配置内容说明：**
 
 所有服务的配置都集中在项目根目录的 `config.yaml` 文件中：
 
@@ -211,6 +324,101 @@ context_crawl:
 
 ## 开发说明
 
+### Pipeline 开发
+
+#### 1. 定义 Pipeline 接口
+
+在 `context_crawl/types/` 目录下定义新的接口（如果需要）：
+
+```go
+// types/my_feature.go
+package types
+
+// MyFeaturePipeline 处理特定类型的内容
+type MyFeaturePipeline interface {
+    Pipeline // 嵌入 Pipeline 接口
+    
+    // 添加特定方法
+    Configure(options map[string]interface{}) error
+}
+```
+
+#### 2. 实现 Pipeline
+
+在 `context_crawl/custom/` 或 `context_crawl/base/` 目录下创建新的 pipeline：
+
+```go
+// custom/myfeature/pipeline.go
+package myfeature
+
+import (
+    "context_crawl/types"
+)
+
+type MyFeaturePipeline struct {
+    Crawler types.Crawler
+    Cleaner types.Cleaner
+    Chunker types.Chunker
+}
+
+func NewMyFeaturePipeline() *MyFeaturePipeline {
+    return &MyFeaturePipeline{
+        Crawler: NewMyFeatureCrawler(),
+        Cleaner: NewBasicCleaner(),
+        Chunker: NewScoredChunker(0.5),
+    }
+}
+
+func (p *MyFeaturePipeline) Process(input types.Type) (types.Type, error) {
+    // 实现处理逻辑
+    pageResult, err := p.Crawler.Crawl(input)
+    if err != nil {
+        return types.Type{}, err
+    }
+    
+    cleanResult, err := p.Cleaner.Clean(pageResult)
+    if err != nil {
+        return types.Type{}, err
+    }
+    
+    chunkResult, err := p.Chunker.Chunk(cleanResult)
+    if err != nil {
+        return types.Type{}, err
+    }
+    
+    return chunkResult, nil
+}
+
+func (p *MyFeaturePipeline) Match(url string) bool {
+    // 实现 URL 匹配逻辑
+    return strings.Contains(url, "myfeature.com")
+}
+```
+
+#### 3. 注册 Pipeline
+
+在 `context_crawl/core/register.go` 中注册新的 pipeline：
+
+```go
+// 4️⃣ 注册 MyFeature pipeline
+RegisterPipeline(30, "myfeature", myfeature.NewMyFeaturePipeline())
+```
+
+#### 4. 组件复用
+
+复用现有的组件来构建新的 pipeline：
+
+```go
+type CustomPipeline struct {
+    // 复用现有的爬虫组件
+    Crawler types.Crawler
+    // 复用现有的清洗组件
+    Cleaner types.Cleaner
+    // 复用现有的分块组件
+    Chunker types.Chunker
+}
+```
+
 ### 添加新的搜索引擎
 
 在 `links_search/source/` 目录下添加新的搜索引擎模块，继承自 `base.py` 中定义的 `SearchSource` 基类，实现统一的接口规范。
@@ -234,7 +442,6 @@ class NewSearchSource(SearchSource):
 在 `server.py` 中添加新的 `@mcp.tool()` 装饰器函数来提供更多功能。
 
 ## 故障排除
-
 
 ### 端口冲突
 如果出现端口被占用错误，请修改对应服务的 config.yaml 文件中的端口号。
