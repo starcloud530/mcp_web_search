@@ -71,3 +71,28 @@ func sortPipelines() {
 		}
 	}
 }
+
+// GetAllPipelines 返回所有已注册的pipeline（按优先级排序）
+func GetAllPipelines() []PipelineEntry {
+	return pipelines
+}
+
+// GetPipelinesAfter 返回第一个匹配指定URL的pipeline之后，下一个也匹配该URL的pipeline
+// 用于保底机制：当前pipeline失败后，尝试下一个匹配的pipeline
+func GetPipelinesAfter(url string) []PipelineEntry {
+	found := false
+
+	for _, entry := range pipelines {
+		if found {
+			// 只返回下一个也匹配该URL的pipeline
+			if entry.Pipeline.Match(url) {
+				return []PipelineEntry{entry}
+			}
+		}
+		if !found && entry.Pipeline.Match(url) {
+			found = true
+		}
+	}
+
+	return []PipelineEntry{}
+}

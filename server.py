@@ -92,11 +92,11 @@ async def get_page_content(urls: List[str]) -> str:
             if resp.status != 200:
                 raise RuntimeError(f"Crawl API failed: {resp.status}")
             data = await resp.json()
-            #print(data)
-            results = data["data"]["results"]
-            #print(results)
-    #return results
-    # 转换为可读文本
+            results = data["data"].get("results", [])
+
+    if not results:
+        return "查询结果为空，当前链接中无有效信息，请尝试其他关键词或者其他链接。"
+
     text_list = []
     for page in results:
         url = page.get("url", "")

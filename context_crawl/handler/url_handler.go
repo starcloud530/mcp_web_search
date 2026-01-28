@@ -5,8 +5,10 @@ import (
 	"context_crawl/handler/models"
 	"context_crawl/service"
 	"context_crawl/types"
-	"github.com/gin-gonic/gin"
+	"log"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // ProcessURLs 处理多个URL的请求
@@ -22,7 +24,8 @@ func ProcessURLs(request models.Request) models.Response {
 
 	// 构建响应数据
 	data := make(map[string]interface{})
-	var processedResults []map[string]interface{}
+	// 初始化为空数组而不是nil
+	processedResults := make([]map[string]interface{}, 0)
 
 	for _, result := range results {
 		processedResults = append(processedResults, map[string]interface{}{
@@ -32,6 +35,10 @@ func ProcessURLs(request models.Request) models.Response {
 	}
 
 	data["results"] = processedResults
+
+	if len(processedResults) == 0 {
+		log.Printf("⚠️ 没有爬取到任何内容，URLs: %v", request.Urls)
+	}
 
 	// 构建响应
 	return models.Response{
